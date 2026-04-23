@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.kyte.app"
+    namespace = "com.example.kyte"
     compileSdk = flutter.compileSdkVersion
 
     compileOptions {
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.kyte.app"
+        applicationId = "com.example.kyte"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
