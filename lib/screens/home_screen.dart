@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../app/bootstrap.dart';
@@ -25,29 +26,29 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedMemberId;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.bgAbyss,
       appBar: AppBar(
-        title: const Text('Kyte'),
+        backgroundColor: AppTheme.bgAbyss,
+        title: ShaderMask(
+          shaderCallback: (bounds) =>
+              AppTheme.headerGradient.createShader(bounds),
+          child: Text(
+            'Org Chart',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(color: Colors.white),
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: widget.bootstrap.demoMode
                       ? Colors.orange.withValues(alpha: 0.12)
@@ -60,13 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 child: Text(
-                  widget.bootstrap.demoMode ? 'Demo mode' : 'Firebase ready',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: widget.bootstrap.demoMode
-                        ? Colors.orange.shade200
-                        : Colors.green.shade200,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  widget.bootstrap.demoMode ? 'Demo' : 'Live',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: widget.bootstrap.demoMode
+                            ? Colors.orange.shade200
+                            : Colors.green.shade200,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
             ),
@@ -74,8 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           child: Consumer<MemberProvider>(
             builder: (context, provider, _) {
               final bootstrapWarning = widget.bootstrap.hasWarning
@@ -111,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 highlightedMemberFocusToken: _highlightFocusToken,
                 onAddRequested: () async {
                   await Navigator.of(context).push<bool>(
-                    buildFadeSlideRoute<bool>(const AddMemberScreen()),
+                    buildScaleFadeRoute<bool>(const AddMemberScreen()),
                   );
                 },
                 onMemberTap: (member) {
@@ -177,14 +179,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppTheme.accentBlue,
-        onPressed: () async {
-          await Navigator.of(
-            context,
-          ).push<bool>(buildFadeSlideRoute<bool>(const AddMemberScreen()));
-        },
-        child: const Icon(Icons.add_rounded, color: Colors.white),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton(
+          backgroundColor: AppTheme.violet,
+          elevation: 8,
+          onPressed: () async {
+            await Navigator.of(context).push<bool>(
+              buildScaleFadeRoute<bool>(const AddMemberScreen()),
+            );
+          },
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
       ),
     );
   }
@@ -196,14 +202,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     for (final member in members) {
-      if (member.id == selectedMemberId) {
-        return member;
-      }
+      if (member.id == selectedMemberId) return member;
     }
 
     return members.isEmpty ? null : members.first;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tree area
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _TreeArea extends StatelessWidget {
   const _TreeArea({
@@ -222,22 +230,19 @@ class _TreeArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: OrgTreeView(
-            members: members,
-            onAddRequested: onAddRequested,
-            highlightedMemberId: highlightedMemberId,
-            highlightedMemberFocusToken: highlightedMemberFocusToken,
-            onMemberTap: onMemberTap,
-          ),
-        ),
-      ],
+    return OrgTreeView(
+      members: members,
+      onAddRequested: onAddRequested,
+      highlightedMemberId: highlightedMemberId,
+      highlightedMemberFocusToken: highlightedMemberFocusToken,
+      onMemberTap: onMemberTap,
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tablet panel
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _TabletProfilePanel extends StatelessWidget {
   const _TabletProfilePanel({required this.member, required this.members});
@@ -251,36 +256,44 @@ class _TabletProfilePanel extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.bgCard,
+          gradient: AppTheme.cardGradient,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF1E293B)),
+          border: Border.all(color: AppTheme.borderSubtle),
         ),
-        child: const Center(child: Text('Select a member to view details.')),
+        child: const Center(
+          child: Text(
+            'Select a member to view details',
+            style: TextStyle(color: AppTheme.textMuted),
+          ),
+        ),
       );
     }
 
     final manager = members
-        .where((candidate) => candidate.id == member!.managerId)
+        .where((c) => c.id == member!.managerId)
         .firstOrNull;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.bgCard,
+        gradient: AppTheme.cardGradient,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: AppTheme.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Profile panel', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 12),
+          Text('Profile', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 14),
           CircleAvatar(
             radius: 28,
-            backgroundColor: AppTheme.accentBlue.withValues(alpha: 0.16),
+            backgroundColor: AppTheme.violet.withValues(alpha: 0.16),
             child: Text(
               member!.name.isEmpty ? '?' : member!.name[0].toUpperCase(),
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -311,7 +324,7 @@ class _TabletProfilePanel extends StatelessWidget {
               onPressed: () =>
                   showMemberProfileSheet(context, member!, members),
               icon: const Icon(Icons.open_in_new_rounded, size: 16),
-              label: const Text('Open full profile'),
+              label: const Text('Full profile'),
             ),
           ),
         ],
@@ -341,9 +354,10 @@ class _ProfileRow extends StatelessWidget {
               value,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppTheme.textPrimary),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppTheme.textPrimary),
             ),
           ),
         ],
@@ -352,26 +366,9 @@ class _ProfileRow extends StatelessWidget {
   }
 }
 
-class _HomeLoadingSkeleton extends StatelessWidget {
-  const _HomeLoadingSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        _SkeletonBlock(height: 132, radius: 20),
-        SizedBox(height: 14),
-        _SkeletonBlock(height: 52, radius: 16),
-        SizedBox(height: 14),
-        _SkeletonBlock(height: 24, width: 140, radius: 8),
-        SizedBox(height: 8),
-        _SkeletonBlock(height: 16, width: 280, radius: 8),
-        SizedBox(height: 14),
-        Expanded(child: _SkeletonBlock(height: double.infinity, radius: 20)),
-      ],
-    );
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Error Banner
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _ErrorBanner extends StatelessWidget {
   const _ErrorBanner({required this.message});
@@ -392,47 +389,63 @@ class _ErrorBanner extends StatelessWidget {
         message,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: Colors.red.shade100),
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(color: Colors.red.shade100),
       ),
     );
   }
 }
 
-class _SkeletonBlock extends StatelessWidget {
-  const _SkeletonBlock({
+// ─────────────────────────────────────────────────────────────────────────────
+// Loading Skeleton
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HomeLoadingSkeleton extends StatelessWidget {
+  const _HomeLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _SkeletonBox(height: 100),
+        const SizedBox(height: 14),
+        _SkeletonBox(height: 52),
+        const SizedBox(height: 14),
+        _SkeletonBox(height: 24, width: 140),
+        const SizedBox(height: 8),
+        _SkeletonBox(height: 16, width: 280),
+        const SizedBox(height: 14),
+        Expanded(child: _SkeletonBox(height: double.infinity)),
+      ],
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  const _SkeletonBox({
     required this.height,
     this.width = double.infinity,
-    this.radius = 12,
   });
 
   final double height;
   final double width;
-  final double radius;
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.25, end: 0.45),
-      duration: const Duration(milliseconds: 900),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Opacity(opacity: value, child: child);
-      },
-      onEnd: () {},
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: AppTheme.bgCard,
-          borderRadius: BorderRadius.circular(radius),
-        ),
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
+    )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .shimmer(
+          duration: 1200.ms,
+          color: AppTheme.bgElevated.withValues(alpha: 0.5),
+        );
   }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/member.dart';
 import '../screens/profile_sheet.dart';
 import '../utils/app_theme.dart';
 import '../utils/department_colors.dart';
 import '../utils/tree_builder.dart';
+import 'tap_scale.dart';
 
 class OrgTreeView extends StatefulWidget {
   const OrgTreeView({
@@ -109,32 +111,33 @@ class _OrgTreeViewState extends State<OrgTreeView>
       constrained: false,
       minScale: 0.3,
       maxScale: 3.0,
-      boundaryMargin: const EdgeInsets.all(180),
+      boundaryMargin: const EdgeInsets.all(200),
       child: ConstrainedBox(
         key: _sceneKey,
         constraints: BoxConstraints(
           minWidth: MediaQuery.sizeOf(context).width - 32,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: tree
-                .map(
-                  (node) => Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: _TreeBranch(
-                      node: node,
-                      collapsedNodeIds: _collapsedNodeIds,
-                      onToggleCollapsed: _toggleNode,
-                      onNodeTap: _openProfile,
-                      nodeKeys: _nodeKeys,
-                      highlightedMemberId: widget.highlightedMemberId,
-                    ),
+            children: [
+              for (var i = 0; i < tree.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: _TreeBranch(
+                    node: tree[i],
+                    collapsedNodeIds: _collapsedNodeIds,
+                    onToggleCollapsed: _toggleNode,
+                    onNodeTap: _openProfile,
+                    nodeKeys: _nodeKeys,
+                    highlightedMemberId: widget.highlightedMemberId,
+                    depth: 0,
+                    animationIndex: i,
                   ),
-                )
-                .toList(),
+                ),
+            ],
           ),
         ),
       ),
@@ -200,11 +203,13 @@ class _OrgTreeViewState extends State<OrgTreeView>
     final targetScale = currentScale < 0.75 ? 0.75 : currentScale;
 
     final targetMatrix = Matrix4.identity()
-      ..translate(
+      ..translateByDouble(
         viewerBox.size.width / 2 - sceneCenter.dx * targetScale,
         viewerBox.size.height / 2 - sceneCenter.dy * targetScale,
+        0.0,
+        0.0,
       )
-      ..scale(targetScale);
+      ..scaleByDouble(targetScale, targetScale, 1.0, 1.0);
 
     _focusAnimationController.stop();
     _focusAnimationController.reset();
@@ -234,6 +239,10 @@ class _OrgTreeViewState extends State<OrgTreeView>
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tree Branch (recursive)
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _TreeBranch extends StatelessWidget {
   const _TreeBranch({
     required this.node,
@@ -243,6 +252,7 @@ class _TreeBranch extends StatelessWidget {
     required this.nodeKeys,
     required this.highlightedMemberId,
     this.depth = 0,
+    this.animationIndex = 0,
   });
 
   final TreeNode node;
@@ -252,25 +262,30 @@ class _TreeBranch extends StatelessWidget {
   final Map<String, GlobalKey> nodeKeys;
   final String? highlightedMemberId;
   final int depth;
+  final int animationIndex;
 
   @override
   Widget build(BuildContext context) {
     final isCollapsed = collapsedNodeIds.contains(node.member.id);
     final hasChildren = node.hasChildren;
     final children = node.children;
+    final childCount = _countAllDescendants(node);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // ── Node card ────────────────────────────────────────────
         Padding(
-          padding: EdgeInsets.only(left: depth * 18.0),
+          padding: EdgeInsets.only(left: depth * 22.0),
           child: _TreeNodeCard(
             key: nodeKeys[node.member.id],
             member: node.member,
             hasChildren: hasChildren,
             isCollapsed: isCollapsed,
             isOrphan: node.isOrphan,
+            depth: depth,
+            childCount: childCount,
             onTap: () => onNodeTap(node.member),
             onToggleCollapsed: hasChildren
                 ? () => onToggleCollapsed(node.member.id)
@@ -278,37 +293,46 @@ class _TreeBranch extends StatelessWidget {
             isHighlighted: highlightedMemberId == node.member.id,
           ),
         ),
+
+        // ── Children ─────────────────────────────────────────────
         AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeInOutCubic,
           alignment: Alignment.topLeft,
           child: hasChildren && !isCollapsed
               ? Padding(
-                  padding: EdgeInsets.only(left: depth * 18.0 + 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 1,
-                        height: 14,
-                        color: const Color(0xFF24324A),
+                  padding: EdgeInsets.only(left: depth * 22.0 + 20),
+                  child: CustomPaint(
+                    painter: _ConnectorPainter(
+                      childCount: children.length,
+                      childSpacing: 78,
+                      color: departmentBadgeColor(node.member.department)
+                          .withValues(alpha: 0.3),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 8),
+                          for (var i = 0; i < children.length; i++)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _TreeBranch(
+                                node: children[i],
+                                collapsedNodeIds: collapsedNodeIds,
+                                onToggleCollapsed: onToggleCollapsed,
+                                onNodeTap: onNodeTap,
+                                nodeKeys: nodeKeys,
+                                highlightedMemberId: highlightedMemberId,
+                                depth: depth + 1,
+                                animationIndex: i,
+                              ),
+                            ),
+                        ],
                       ),
-                      ...children.map(
-                        (child) => Padding(
-                          padding: const EdgeInsets.only(left: 14),
-                          child: _TreeBranch(
-                            node: child,
-                            collapsedNodeIds: collapsedNodeIds,
-                            onToggleCollapsed: onToggleCollapsed,
-                            onNodeTap: onNodeTap,
-                            nodeKeys: nodeKeys,
-                            highlightedMemberId: highlightedMemberId,
-                            depth: depth + 1,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 )
               : const SizedBox.shrink(),
@@ -316,7 +340,103 @@ class _TreeBranch extends StatelessWidget {
       ],
     );
   }
+
+  int _countAllDescendants(TreeNode node) {
+    var count = node.children.length;
+    for (final child in node.children) {
+      count += _countAllDescendants(child);
+    }
+    return count;
+  }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Connector Lines — CustomPainter with curved Bézier lines
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ConnectorPainter extends CustomPainter {
+  _ConnectorPainter({
+    required this.childCount,
+    required this.childSpacing,
+    required this.color,
+  });
+
+  final int childCount;
+  final double childSpacing;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (childCount == 0) return;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const startX = 0.0;
+    const endX = 16.0;
+    const curveRadius = 10.0;
+
+    // Draw vertical trunk
+    final firstChildY = 8.0 + 35;
+    final lastChildY = 8.0 + (childCount - 1) * childSpacing + 35;
+
+    if (childCount > 1) {
+      canvas.drawLine(
+        Offset(startX, firstChildY - curveRadius),
+        Offset(startX, lastChildY - curveRadius),
+        paint,
+      );
+    }
+
+    // Draw horizontal branches with rounded corner
+    for (var i = 0; i < childCount; i++) {
+      final childY = 8.0 + i * childSpacing + 35;
+      final path = Path();
+
+      if (childCount == 1) {
+        // Single child — simple L-shape
+        path.moveTo(startX, 0);
+        path.lineTo(startX, childY - curveRadius);
+        path.quadraticBezierTo(
+          startX, childY,
+          startX + curveRadius, childY,
+        );
+        path.lineTo(endX, childY);
+      } else {
+        // Branch from trunk
+        path.moveTo(startX, childY - curveRadius);
+        path.quadraticBezierTo(
+          startX, childY,
+          startX + curveRadius, childY,
+        );
+        path.lineTo(endX, childY);
+      }
+
+      canvas.drawPath(path, paint);
+    }
+
+    // Vertical line from top to first branch
+    if (childCount > 0) {
+      canvas.drawLine(
+        Offset(startX, 0),
+        Offset(startX, firstChildY - curveRadius),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ConnectorPainter oldDelegate) =>
+      oldDelegate.childCount != childCount ||
+      oldDelegate.color != color;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tree Node Card
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _TreeNodeCard extends StatelessWidget {
   const _TreeNodeCard({
@@ -325,6 +445,8 @@ class _TreeNodeCard extends StatelessWidget {
     required this.hasChildren,
     required this.isCollapsed,
     required this.isOrphan,
+    required this.depth,
+    required this.childCount,
     required this.onTap,
     required this.isHighlighted,
     this.onToggleCollapsed,
@@ -334,152 +456,170 @@ class _TreeNodeCard extends StatelessWidget {
   final bool hasChildren;
   final bool isCollapsed;
   final bool isOrphan;
+  final int depth;
+  final int childCount;
   final bool isHighlighted;
   final VoidCallback onTap;
   final VoidCallback? onToggleCollapsed;
 
+  double get _cardScale {
+    if (depth == 0) return 1.0;
+    if (depth == 1) return 0.95;
+    return 0.90;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          constraints: const BoxConstraints(minWidth: 210),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isHighlighted
-                ? AppTheme.accentBlue.withValues(alpha: 0.18)
-                : AppTheme.bgCard,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isHighlighted
-                  ? const Color(0xFFFFB74D)
-                  : const Color(0xFF1E293B),
-              width: isHighlighted ? 1.8 : 1,
-            ),
-            boxShadow: [
-              const BoxShadow(
-                color: Color(0x33000000),
-                blurRadius: 16,
-                offset: Offset(0, 8),
-              ),
-              if (isHighlighted)
-                const BoxShadow(
-                  color: Color(0x44FFB74D),
-                  blurRadius: 20,
-                  spreadRadius: 1,
-                ),
+    final deptColor = departmentBadgeColor(member.department);
+
+    return TapScale(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        constraints: BoxConstraints(
+          minWidth: depth == 0 ? 260 : 220,
+          maxWidth: depth == 0 ? 340 : 300,
+        ),
+        transform: Matrix4.identity()..scaleByDouble(_cardScale, _cardScale, 1.0, 1.0),
+        transformAlignment: Alignment.centerLeft,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              isHighlighted
+                  ? AppTheme.violet.withValues(alpha: 0.2)
+                  : AppTheme.bgCard,
+              isHighlighted
+                  ? AppTheme.violet.withValues(alpha: 0.1)
+                  : AppTheme.bgElevated.withValues(alpha: 0.5),
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isHighlighted
+                ? AppTheme.violet.withValues(alpha: 0.6)
+                : AppTheme.borderSubtle,
+            width: isHighlighted ? 1.5 : 1,
+          ),
+          boxShadow: [
+            ...AppTheme.subtleShadow,
+            if (isHighlighted) ...AppTheme.glowShadow,
+            if (depth == 0)
+              BoxShadow(
+                color: deptColor.withValues(alpha: 0.1),
+                blurRadius: 20,
+                spreadRadius: 0,
+              ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Stack(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppTheme.accentBlue.withValues(
-                      alpha: 0.16,
+              // Left accent stripe
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 3.5,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: departmentGradientColors(member.department),
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                    backgroundImage:
-                        member.photoUrl != null && member.photoUrl!.isNotEmpty
-                        ? NetworkImage(member.photoUrl!)
-                        : null,
-                    child:
-                        member.photoUrl != null && member.photoUrl!.isNotEmpty
-                        ? null
-                        : Text(
-                            member.name.isEmpty
-                                ? '?'
-                                : member.name[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
                   ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    fit: FlexFit.loose,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ),
+
+              // Card content
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          member.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium,
+                        // Avatar with gradient ring for highlighted
+                        _NodeAvatar(
+                          member: member,
+                          isHighlighted: isHighlighted,
+                          depth: depth,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          member.role,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
+                        const SizedBox(width: 10),
+
+                        // Name + role
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                member.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontSize: depth == 0 ? 16 : 14,
+                                    ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                member.role,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Collapse toggle
+                        if (hasChildren && onToggleCollapsed != null) ...[
+                          const SizedBox(width: 6),
+                          _CollapseButton(
+                            isCollapsed: isCollapsed,
+                            childCount: childCount,
+                            onTap: onToggleCollapsed!,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _Badge(
+                          label: member.department,
+                          color: deptColor,
+                        ),
+                        const SizedBox(width: 6),
+                        _Badge(
+                          label: member.team,
+                          color: AppTheme.textSecondary,
+                          isSubtle: true,
                         ),
                       ],
                     ),
-                  ),
-                  if (hasChildren && onToggleCollapsed != null)
-                    IconButton(
-                      onPressed: onToggleCollapsed,
-                      icon: Icon(
-                        isCollapsed
-                            ? Icons.keyboard_arrow_down_rounded
-                            : Icons.keyboard_arrow_up_rounded,
-                        color: AppTheme.textSecondary,
+
+                    if (isOrphan)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: _Badge(
+                          label: '⚠ Manager missing',
+                          color: const Color(0xFFFF8A65),
+                        ),
                       ),
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: 28,
-                        height: 28,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _Badge(
-                    label: member.department,
-                    tone: departmentBadgeColor(
-                      member.department,
-                    ).withValues(alpha: 0.22),
-                    textColor: departmentBadgeColor(member.department),
-                  ),
-                  const SizedBox(width: 8),
-                  _Badge(
-                    label: member.team,
-                    tone: AppTheme.accentBlue.withValues(alpha: 0.2),
-                    textColor: AppTheme.textPrimary,
-                  ),
-                ],
-              ),
-              if (isOrphan)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: _Badge(
-                    label: '⚠ Manager missing',
-                    tone: const Color(0x22FF8A65),
-                    textColor: const Color(0xFFFF8A65),
-                  ),
+                  ],
                 ),
-              if (hasChildren)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    isCollapsed ? 'Tap to expand' : 'Tap card to open profile',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
+              ),
             ],
           ),
         ),
@@ -488,33 +628,166 @@ class _TreeNodeCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Avatar with optional gradient ring
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _NodeAvatar extends StatelessWidget {
+  const _NodeAvatar({
+    required this.member,
+    required this.isHighlighted,
+    required this.depth,
+  });
+
+  final Member member;
+  final bool isHighlighted;
+  final int depth;
+
+  double get _radius => depth == 0 ? 20.0 : 16.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = CircleAvatar(
+      radius: _radius,
+      backgroundColor: departmentBadgeColor(member.department)
+          .withValues(alpha: 0.18),
+      backgroundImage:
+          member.photoUrl != null && member.photoUrl!.isNotEmpty
+              ? NetworkImage(member.photoUrl!)
+              : null,
+      child: member.photoUrl != null && member.photoUrl!.isNotEmpty
+          ? null
+          : Text(
+              member.name.isEmpty ? '?' : member.name[0].toUpperCase(),
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: _radius * 0.7,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+    );
+
+    if (!isHighlighted) return avatar;
+
+    // Gradient ring for highlighted nodes
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: AppTheme.headerGradient,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(1.5),
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppTheme.bgCard,
+        ),
+        child: avatar,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Collapse button with animated rotation + child count
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CollapseButton extends StatelessWidget {
+  const _CollapseButton({
+    required this.isCollapsed,
+    required this.childCount,
+    required this.onTap,
+  });
+
+  final bool isCollapsed;
+  final int childCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppTheme.bgSurface.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$childCount',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 2),
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              turns: isCollapsed ? 0.0 : 0.5,
+              child: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 16,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _Badge extends StatelessWidget {
-  const _Badge({required this.label, this.tone, this.textColor});
+  const _Badge({
+    required this.label,
+    required this.color,
+    this.isSubtle = false,
+  });
 
   final String label;
-  final Color? tone;
-  final Color? textColor;
+  final Color color;
+  final bool isSubtle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: tone ?? AppTheme.accentBlue.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        color: isSubtle
+            ? AppTheme.bgSurface.withValues(alpha: 0.5)
+            : color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: isSubtle
+            ? null
+            : Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: textColor ?? AppTheme.accentBlue,
+        style: TextStyle(
+          color: isSubtle ? AppTheme.textSecondary : color,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Empty state
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _EmptyTreeState extends StatelessWidget {
   const _EmptyTreeState({required this.onAddRequested});
@@ -527,27 +800,45 @@ class _EmptyTreeState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.hub_outlined,
-            size: 56,
-            color: AppTheme.accentBlue.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text('No members yet', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppTheme.accentGlowSubtle,
+            ),
+            child: Icon(
+              Icons.hub_outlined,
+              size: 48,
+              color: AppTheme.violet.withValues(alpha: 0.7),
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.05, 1.05),
+                duration: 2000.ms,
+              ),
+          const SizedBox(height: 20),
           Text(
-            'Tap + to add the first person to your organization',
+            'No members yet',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add the first person to build your org chart',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: onAddRequested,
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add member'),
           ),
         ],
       ),
-    );
+    )
+        .animate()
+        .fadeIn(duration: 500.ms);
   }
 }
