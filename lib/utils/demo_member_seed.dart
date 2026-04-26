@@ -3,14 +3,14 @@ import '../models/member.dart';
 const List<Member> demoMembers = <Member>[
   Member(
     id: 'ceo-001',
-    name: 'Ava Chen',
+    name: 'Aarav Sharma',
     role: 'Principal Software Engineer',
     department: 'Engineering',
     team: 'Platform',
   ),
   Member(
     id: 'eng-mgr-001',
-    name: 'Noah Patel',
+    name: 'Ananya Verma',
     role: 'Engineering Manager',
     department: 'Engineering',
     team: 'Platform',
@@ -18,7 +18,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'eng-001',
-    name: 'Priya Sharma',
+    name: 'Rohan Mehta',
     role: 'Software Development Engineer III (SDE III)',
     department: 'Engineering',
     team: 'Core Services',
@@ -26,7 +26,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'eng-002',
-    name: 'Liam Johnson',
+    name: 'Ishita Rao',
     role: 'Software Development Engineer II (SDE II)',
     department: 'Engineering',
     team: 'Core Services',
@@ -34,7 +34,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'product-001',
-    name: 'Maya Rodriguez',
+    name: 'Kabir Nair',
     role: 'Product Manager',
     department: 'Product',
     team: 'Growth',
@@ -42,7 +42,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'ops-001',
-    name: 'Ethan Brooks',
+    name: 'Diya Kapoor',
     role: 'DevOps Engineer',
     department: 'Operations',
     team: 'Infra',
@@ -50,7 +50,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'qa-001',
-    name: 'Sophia Ali',
+    name: 'Vikram Iyer',
     role: 'QA / Test Engineer',
     department: 'Operations',
     team: 'Quality',
@@ -58,7 +58,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'hr-001',
-    name: 'Daniel Kim',
+    name: 'Naina Desai',
     role: 'Technical Consultant',
     department: 'HR',
     team: 'People Ops',
@@ -66,7 +66,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'mkt-001',
-    name: 'Isabella Singh',
+    name: 'Arjun Malhotra',
     role: 'Senior Software Engineer',
     department: 'Marketing',
     team: 'Brand Systems',
@@ -74,7 +74,7 @@ const List<Member> demoMembers = <Member>[
   ),
   Member(
     id: 'eng-003',
-    name: 'Lucas Martin',
+    name: 'Meera Joshi',
     role: 'Software Development Engineer I (SDE I)',
     department: 'Engineering',
     team: 'Platform',

@@ -129,9 +129,9 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to add member: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unable to add member: $error')));
     }
   }
 
@@ -187,7 +187,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                             _StyledField(
                               label: 'Full Name',
                               controller: _nameController,
-                              hintText: 'e.g. Priya Sharma',
+                              hintText: 'e.g. Aarav Sharma',
                               icon: Icons.person_outline_rounded,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -245,7 +245,8 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                         isExpanded: _reportingExpanded,
                         canCollapse: true,
                         onToggle: () => setState(
-                            () => _reportingExpanded = !_reportingExpanded),
+                          () => _reportingExpanded = !_reportingExpanded,
+                        ),
                         child: _ManagerSelector(
                           selectedManagerId: _selectedManagerId,
                           members: members,
@@ -326,62 +327,61 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.violet.withValues(alpha: 0.15),
-            AppTheme.bgAbyss,
-          ],
-        ),
-        border: const Border(
-          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TapScale(
-            onTap: onBack,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.bgCard,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderSubtle),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppTheme.textSecondary,
-                size: 18,
-              ),
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppTheme.violet.withValues(alpha: 0.15),
+                AppTheme.bgAbyss,
+              ],
+            ),
+            border: const Border(
+              bottom: BorderSide(color: AppTheme.borderSubtle, width: 1),
             ),
           ),
-          const SizedBox(height: 16),
-          ShaderMask(
-            shaderCallback: (bounds) =>
-                AppTheme.headerGradient.createShader(bounds),
-            child: Text(
-              isEditMode ? 'Edit Member' : 'Add Member',
-              style: Theme.of(context)
-                  .textTheme
-                  .displaySmall
-                  ?.copyWith(color: Colors.white),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TapScale(
+                onTap: onBack,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.bgCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppTheme.textSecondary,
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ShaderMask(
+                shaderCallback: (bounds) =>
+                    AppTheme.headerGradient.createShader(bounds),
+                child: Text(
+                  isEditMode ? 'Edit Member' : 'Add Member',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.displaySmall?.copyWith(color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isEditMode
+                    ? 'Update details and keep the hierarchy valid'
+                    : 'Create a new profile and connect to the org chart',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            isEditMode
-                ? 'Update details and keep the hierarchy valid'
-                : 'Create a new profile and connect to the org chart',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
-      ),
-    )
+        )
         .animate()
         .fadeIn(duration: 400.ms)
         .slideY(begin: -0.03, end: 0, duration: 400.ms);
@@ -416,82 +416,82 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.borderSubtle),
-        boxShadow: AppTheme.subtleShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          GestureDetector(
-            onTap: canCollapse ? onToggle : null,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.violet.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, size: 16, color: AppTheme.violet),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.titleMedium,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: AppTheme.cardGradient,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.borderSubtle),
+            boxShadow: AppTheme.subtleShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              GestureDetector(
+                onTap: canCollapse ? onToggle : null,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.violet.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (canCollapse)
-                    AnimatedRotation(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOutCubic,
-                      turns: isExpanded ? 0.5 : 0.0,
-                      child: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppTheme.textMuted,
+                        child: Icon(icon, size: 16, color: AppTheme.violet),
                       ),
-                    ),
-                ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitle,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (canCollapse)
+                        AnimatedRotation(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          turns: isExpanded ? 0.5 : 0.0,
+                          child: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // Expandable content
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOutCubic,
-            child: isExpanded
-                ? AnimatedOpacity(
-                    duration: const Duration(milliseconds: 250),
-                    opacity: isExpanded ? 1.0 : 0.0,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: child,
-                    ),
-                  )
-                : const SizedBox(width: double.infinity),
+              // Expandable content
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOutCubic,
+                child: isExpanded
+                    ? AnimatedOpacity(
+                        duration: const Duration(milliseconds: 250),
+                        opacity: isExpanded ? 1.0 : 0.0,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: child,
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
+              ),
+            ],
           ),
-        ],
-      ),
-    )
+        )
         .animate()
         .fadeIn(
           delay: Duration(milliseconds: 80 + index * 100),
@@ -574,7 +574,10 @@ class _RoleSelector extends StatelessWidget {
                 child: InputDecorator(
                   decoration: InputDecoration(
                     labelText: 'Role',
-                    prefixIcon: const Icon(Icons.work_outline_rounded, size: 18),
+                    prefixIcon: const Icon(
+                      Icons.work_outline_rounded,
+                      size: 18,
+                    ),
                     errorText: state.errorText,
                     suffixIcon: const Icon(
                       Icons.keyboard_arrow_down_rounded,
@@ -738,7 +741,7 @@ class _ManagerSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String?>(
-      initialValue: selectedManagerId,
+      value: selectedManagerId,
       isExpanded: true,
       menuMaxHeight: 320,
       dropdownColor: AppTheme.bgElevated,
@@ -777,9 +780,7 @@ class _ManagerSelector extends StatelessWidget {
                 radius: 12,
                 backgroundColor: AppTheme.violet.withValues(alpha: 0.16),
                 child: Text(
-                  manager.name.isEmpty
-                      ? '?'
-                      : manager.name[0].toUpperCase(),
+                  manager.name.isEmpty ? '?' : manager.name[0].toUpperCase(),
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -843,44 +844,43 @@ class _SubmitButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: showSuccess
-              ? const LinearGradient(
-                  colors: [Color(0xFF059669), Color(0xFF10B981)],
-                )
-              : AppTheme.headerGradient,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: (showSuccess
-                      ? const Color(0xFF059669)
-                      : AppTheme.violet)
-                  .withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: isSaving || showSuccess ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: Colors.transparent,
-            disabledForegroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
+          width: double.infinity,
+          height: 54,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: showSuccess
+                  ? const LinearGradient(
+                      colors: [Color(0xFF059669), Color(0xFF10B981)],
+                    )
+                  : AppTheme.headerGradient,
               borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color:
+                      (showSuccess ? const Color(0xFF059669) : AppTheme.violet)
+                          .withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: showSuccess
-                ? const Icon(Icons.check_rounded, key: ValueKey('check'))
-                : isSaving
+            child: ElevatedButton(
+              onPressed: isSaving || showSuccess ? null : onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.transparent,
+                disabledForegroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: showSuccess
+                    ? const Icon(Icons.check_rounded, key: ValueKey('check'))
+                    : isSaving
                     ? const SizedBox(
                         key: ValueKey('loading'),
                         width: 20,
@@ -898,10 +898,10 @@ class _SubmitButton extends StatelessWidget {
                           fontSize: 15,
                         ),
                       ),
+              ),
+            ),
           ),
-        ),
-      ),
-    )
+        )
         .animate()
         .fadeIn(delay: 350.ms, duration: 400.ms)
         .slideY(begin: 0.1, end: 0, delay: 350.ms, duration: 400.ms);

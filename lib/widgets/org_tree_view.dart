@@ -203,13 +203,12 @@ class _OrgTreeViewState extends State<OrgTreeView>
     final targetScale = currentScale < 0.75 ? 0.75 : currentScale;
 
     final targetMatrix = Matrix4.identity()
-      ..translateByDouble(
+      ..translate(
         viewerBox.size.width / 2 - sceneCenter.dx * targetScale,
         viewerBox.size.height / 2 - sceneCenter.dy * targetScale,
         0.0,
-        0.0,
       )
-      ..scaleByDouble(targetScale, targetScale, 1.0, 1.0);
+      ..scale(targetScale, targetScale, 1.0);
 
     _focusAnimationController.stop();
     _focusAnimationController.reset();
@@ -306,8 +305,9 @@ class _TreeBranch extends StatelessWidget {
                     painter: _ConnectorPainter(
                       childCount: children.length,
                       childSpacing: 78,
-                      color: departmentBadgeColor(node.member.department)
-                          .withValues(alpha: 0.3),
+                      color: departmentBadgeColor(
+                        node.member.department,
+                      ).withValues(alpha: 0.3),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.only(left: 20),
@@ -400,18 +400,12 @@ class _ConnectorPainter extends CustomPainter {
         // Single child — simple L-shape
         path.moveTo(startX, 0);
         path.lineTo(startX, childY - curveRadius);
-        path.quadraticBezierTo(
-          startX, childY,
-          startX + curveRadius, childY,
-        );
+        path.quadraticBezierTo(startX, childY, startX + curveRadius, childY);
         path.lineTo(endX, childY);
       } else {
         // Branch from trunk
         path.moveTo(startX, childY - curveRadius);
-        path.quadraticBezierTo(
-          startX, childY,
-          startX + curveRadius, childY,
-        );
+        path.quadraticBezierTo(startX, childY, startX + curveRadius, childY);
         path.lineTo(endX, childY);
       }
 
@@ -430,8 +424,7 @@ class _ConnectorPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ConnectorPainter oldDelegate) =>
-      oldDelegate.childCount != childCount ||
-      oldDelegate.color != color;
+      oldDelegate.childCount != childCount || oldDelegate.color != color;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -481,7 +474,7 @@ class _TreeNodeCard extends StatelessWidget {
           minWidth: depth == 0 ? 260 : 220,
           maxWidth: depth == 0 ? 340 : 300,
         ),
-        transform: Matrix4.identity()..scaleByDouble(_cardScale, _cardScale, 1.0, 1.0),
+        transform: Matrix4.identity()..scale(_cardScale, _cardScale, 1.0),
         transformAlignment: Alignment.centerLeft,
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -564,12 +557,8 @@ class _TreeNodeCard extends StatelessWidget {
                                 member.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      fontSize: depth == 0 ? 16 : 14,
-                                    ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontSize: depth == 0 ? 16 : 14),
                               ),
                               const SizedBox(height: 2),
                               Text(
@@ -596,10 +585,7 @@ class _TreeNodeCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _Badge(
-                          label: member.department,
-                          color: deptColor,
-                        ),
+                        _Badge(label: member.department, color: deptColor),
                         const SizedBox(width: 6),
                         _Badge(
                           label: member.team,
@@ -649,12 +635,12 @@ class _NodeAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatar = CircleAvatar(
       radius: _radius,
-      backgroundColor: departmentBadgeColor(member.department)
-          .withValues(alpha: 0.18),
-      backgroundImage:
-          member.photoUrl != null && member.photoUrl!.isNotEmpty
-              ? NetworkImage(member.photoUrl!)
-              : null,
+      backgroundColor: departmentBadgeColor(
+        member.department,
+      ).withValues(alpha: 0.18),
+      backgroundImage: member.photoUrl != null && member.photoUrl!.isNotEmpty
+          ? NetworkImage(member.photoUrl!)
+          : null,
       child: member.photoUrl != null && member.photoUrl!.isNotEmpty
           ? null
           : Text(
@@ -801,17 +787,17 @@ class _EmptyTreeState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: AppTheme.accentGlowSubtle,
-            ),
-            child: Icon(
-              Icons.hub_outlined,
-              size: 48,
-              color: AppTheme.violet.withValues(alpha: 0.7),
-            ),
-          )
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppTheme.accentGlowSubtle,
+                ),
+                child: Icon(
+                  Icons.hub_outlined,
+                  size: 48,
+                  color: AppTheme.violet.withValues(alpha: 0.7),
+                ),
+              )
               .animate(onPlay: (c) => c.repeat(reverse: true))
               .scale(
                 begin: const Offset(1, 1),
@@ -819,10 +805,7 @@ class _EmptyTreeState extends StatelessWidget {
                 duration: 2000.ms,
               ),
           const SizedBox(height: 20),
-          Text(
-            'No members yet',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text('No members yet', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
             'Add the first person to build your org chart',
@@ -837,8 +820,6 @@ class _EmptyTreeState extends StatelessWidget {
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 500.ms);
+    ).animate().fadeIn(duration: 500.ms);
   }
 }

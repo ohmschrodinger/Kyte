@@ -14,7 +14,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'AVA');
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ListTile, 'Ava Chen'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Aarav Sharma'), findsOneWidget);
     expect(find.textContaining('Name match'), findsOneWidget);
   });
 
@@ -27,7 +27,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'hr');
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ListTile, 'Daniel Kim'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Naina Desai'), findsOneWidget);
     expect(find.textContaining('Dept match'), findsOneWidget);
   });
 
@@ -40,7 +40,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'ava');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ListTile, 'Ava Chen'));
+    await tester.tap(find.widgetWithText(ListTile, 'Aarav Sharma'));
     await tester.pumpAndSettle();
 
     var tree = tester.widget<OrgTreeView>(find.byType(OrgTreeView));
@@ -51,6 +51,6 @@ void main() {
 
     tree = tester.widget<OrgTreeView>(find.byType(OrgTreeView));
     expect(tree.highlightedMemberId, isNull);
-    expect(find.widgetWithText(ListTile, 'Ava Chen'), findsNothing);
+    expect(find.widgetWithText(ListTile, 'Aarav Sharma'), findsNothing);
   });
 }
